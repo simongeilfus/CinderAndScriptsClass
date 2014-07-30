@@ -10,6 +10,10 @@
 #include <scriptstdstring/scriptstdstring.h>
 #include <scriptbuilder/scriptbuilder.h>
 #include <serializer/serializer.h>
+#include <scriptmath/scriptmath.h>
+#include <scriptarray/scriptarray.h>
+#include <scriptdictionary/scriptdictionary.h>
+
 #include "cinder/Utilities.h"
 
 using namespace std;
@@ -56,21 +60,23 @@ namespace as {
     Script::~Script()
     {
         // Clean up
+        if( mModule ){
+            mModule->Discard();
+        }
+        
         if( mContext ){
             mContext->Abort();
             mContext->Unprepare();
             mContext->Release();
         }
         
-        if( mModule ){
-            //mModule->Discard();
-        }
         
         getEngine()->GarbageCollect();
         
         sNumScripts--;
+        
         /*if( sNumScripts <= 0 )
-            getEngine()->Release();*/
+         getEngine()->Release();*/
     }
     
     //! load a script section from a file on disk. Returns false on errors
@@ -188,46 +194,46 @@ namespace as {
     {
         if( !isBuilt() )
             return false;
-       /*
-        cout << "isContextNull: " << (getContext() == NULL) << endl;
-        cout << "isModuleNull: " << (getModule() == NULL) << endl;*/
+        /*
+         cout << "isContextNull: " << (getContext() == NULL) << endl;
+         cout << "isModuleNull: " << (getModule() == NULL) << endl;*/
         
         
         asIScriptFunction *func;
         /*if( mFunctions.count( name ) && mFunctions[name] != NULL ){
-            func = mFunctions[name];
+         func = mFunctions[name];
+         }
+         else {*/
+        func = mModule->GetFunctionByDecl( name.c_str() );
+        if( func == 0 )
+        {
+            // The function couldn't be found. Instruct the script writer
+            // to include the expected function in the script.
+            /* cout << "The script must have the function " <<  name << ". Please add it and try again." << endl;*/
+            return false;
         }
-        else {*/
-            func = mModule->GetFunctionByDecl( name.c_str() );
-            if( func == 0 )
-            {
-                // The function couldn't be found. Instruct the script writer
-                // to include the expected function in the script.
-               /* cout << "The script must have the function " <<  name << ". Please add it and try again." << endl;*/
-                return false;
-            }
         /*    mFunctions[name] = func;
-        }*/
+         }*/
         
         int state = getContext()->GetState();
-       /* switch( state ){
-                case asEXECUTION_FINISHED      : cout << "State: " << "asEXECUTION_FINISHED" << endl; break;
-                case asEXECUTION_SUSPENDED     : cout << "State: " << "asEXECUTION_SUSPENDED" << endl; break;
-                case asEXECUTION_ABORTED       : cout << "State: " << "asEXECUTION_ABORTED" << endl; break;
-                case asEXECUTION_EXCEPTION     : cout << "State: " << "asEXECUTION_EXCEPTION" << endl; break;
-                case asEXECUTION_PREPARED      : cout << "State: " << "asEXECUTION_PREPARED" << endl; break;
-                case asEXECUTION_UNINITIALIZED : cout << "State: " << "asEXECUTION_UNINITIALIZED" << endl; break;
-                case asEXECUTION_ACTIVE        : cout << "State: " << "asEXECUTION_ACTIVE" << endl; break;
-                case asEXECUTION_ERROR         : cout << "State: " << "asEXECUTION_ERROR" << endl; break;
-        }*/
+        /* switch( state ){
+         case asEXECUTION_FINISHED      : cout << "State: " << "asEXECUTION_FINISHED" << endl; break;
+         case asEXECUTION_SUSPENDED     : cout << "State: " << "asEXECUTION_SUSPENDED" << endl; break;
+         case asEXECUTION_ABORTED       : cout << "State: " << "asEXECUTION_ABORTED" << endl; break;
+         case asEXECUTION_EXCEPTION     : cout << "State: " << "asEXECUTION_EXCEPTION" << endl; break;
+         case asEXECUTION_PREPARED      : cout << "State: " << "asEXECUTION_PREPARED" << endl; break;
+         case asEXECUTION_UNINITIALIZED : cout << "State: " << "asEXECUTION_UNINITIALIZED" << endl; break;
+         case asEXECUTION_ACTIVE        : cout << "State: " << "asEXECUTION_ACTIVE" << endl; break;
+         case asEXECUTION_ERROR         : cout << "State: " << "asEXECUTION_ERROR" << endl; break;
+         }*/
         
         if( func == NULL || state == asEXECUTION_EXCEPTION || state == asEXECUTION_ERROR )
             return false;
         
-       /* assert(func);
-        
-        cout << "isFunctionNull: " << ( func == nullptr) << endl;
-        cout << "functionName: " << ( func->GetName() ) << endl;*/
+        /* assert(func);
+         
+         cout << "isFunctionNull: " << ( func == nullptr) << endl;
+         cout << "functionName: " << ( func->GetName() ) << endl;*/
         
         
         int r = getContext()->Prepare(func);
@@ -462,7 +468,7 @@ namespace as {
         return pos;
     }
     
-    int  Script::excludeCode( int pos )
+    int Script::excludeCode( int pos )
     {
         int len;
         int nested = 0;
@@ -534,45 +540,20 @@ namespace as {
         // Create the script engine
         sEngine = asCreateScriptEngine( ANGELSCRIPT_VERSION );
         // Set the message callback to receive information on errors in human readable form.
-        int r = sEngine->SetMessageCallback(asFUNCTION(MessageCallback), 0, asCALL_CDECL);
+        int r = sEngine->SetMessageCallback(asFUNCTION(MessageCallback), 0, asCALL_CDECL); assert( r >= 0 );
         
-        assert( r >= 0 );
+        // sEngine->SetEngineProperty( asEP_DISALLOW_GLOBAL_VARS, 1 );
         
-//        sEngine->SetEngineProperty( asEP_DISALLOW_GLOBAL_VARS, 1 );
-        
-        // AngelScript doesn't have a built-in string type, as there is no definite standard
-        // string type for C++ applications. Every developer is free to register it's own string type.
-        // The SDK do however provide a standard add-on for registering a string type, so it's not
-        // necessary to implement the registration yourself if you don't want to.
+        // Register libraries
         RegisterStdString( sEngine );
-        
-        
-        assert( r >= 0 );
+        RegisterScriptArray( sEngine, true );
+        RegisterScriptDictionary( sEngine );
+        RegisterScriptMath( sEngine );
     }
     
-    
-    int includeCallback(const char *include, const char *from, CScriptBuilder *builder, void *userParam)
-    {
-        DataSourceRef includeData;
-        try {
-            includeData = app::loadAsset( include );
-        }
-        catch( ci::app::AssetLoadExc exc ){
-            cout << exc.what() << endl;
-        }
-        
-        if( !includeData ){
-            cout << "The script couldn't load " << include << " include. Please correct the path and try again." << endl;
-        }
-        else {
-            return builder->AddSectionFromMemory( include, loadString( includeData ).c_str() );
-        }
-        return -1;
-    }
-    
+    //! setArg Template Specializations
     template<> void Script::setArgValue<int>( int arg, int value ) { getContext()->SetArgDWord( arg, value ); }
     template<> void Script::setArgValue<float>( int arg, float value ) { getContext()->SetArgFloat( arg, value ); }
     template<> void Script::setArgValue<double>( int arg, double value ) { getContext()->SetArgDouble( arg, value ); }
     template<> void Script::setArgValue<bool>( int arg, bool value ) { getContext()->SetArgByte( arg, value ); }
-    
 }
