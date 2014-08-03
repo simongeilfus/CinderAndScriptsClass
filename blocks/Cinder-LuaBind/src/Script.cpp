@@ -45,11 +45,11 @@ namespace lua {
 		luabind::open( mInstance->mState );
         luabind::register_exception_handler<my_exception>(&translate_my_exception);
         
-		if( mInstance->mBindAll ){
+		/*if( mInstance->mBindAll ){
 			Bindings::bindStd( mInstance->mState );
             Bindings::bindCinder( mInstance->mState );
 			luabind::bind_class_info( State::get() );
-		}
+		}*/
         
 	}
     
@@ -103,7 +103,8 @@ namespace lua {
         return 0;
     }
     
-	Script::Script( bool bindAll, bool useLuaThread ){
+    void Script::init( bool bindAll, bool useLuaThread )
+    {
 		mStopOnErrors	= true;
 		mErrors			= false;
         
@@ -120,7 +121,7 @@ namespace lua {
         else {
             mState = luaL_newstate();
             
-            luaL_openlibs( mState );            
+            luaL_openlibs( mState );
             luabind::open( mState );
             
             if( bindAll ){
@@ -129,12 +130,45 @@ namespace lua {
             }
         }
         
-		//addClassSupport();
+		addClassSupport();
         
         //luabind::register_exception_handler<my_exception>(&translate_my_exception);
-       // luabind::set_pcall_callback( &errorHandling );
+        // luabind::set_pcall_callback( &errorHandling );
         lua_atpanic( mState, &panic);
+    }
+    
+    
+    //! creates a Script
+    ScriptRef Script::create( bool bindAll, bool useLuaThread ){
+        return ScriptRef( new Script( bindAll, useLuaThread ) );
+    }
+    //! creates and loads script from DataSourceRef and returns a ScriptRef
+    ScriptRef Script::create( ci::DataSourceRef script, bool bindAll, bool useLuaThread )
+    {
+        return ScriptRef( new Script( script, bindAll, useLuaThread ) );
+    }
+    //! creates and loads script from std::string and returns a ScriptRef
+    ScriptRef Script::create( const char *script, bool bindAll, bool useLuaThread )
+    {
+        return ScriptRef( new Script( string( script ), bindAll, useLuaThread ) );
+    }
+    
+	Script::Script( bool bindAll, bool useLuaThread ){
+        init( bindAll, useLuaThread );
 	}
+    
+    
+    //! Creates and loads a script from a file
+    Script::Script( ci::DataSourceRef script, bool bindAll, bool useLuaThread ){
+        init( bindAll, useLuaThread );
+        loadFromFile( script );
+	}
+    //! Creates and loads a script from memory
+    Script::Script( const std::string &script, bool bindAll, bool useLuaThread ){
+        init( bindAll, useLuaThread );
+        loadFromMemory( script );
+	}
+    
 	Script::~Script(){
         gc();
         
@@ -153,11 +187,11 @@ namespace lua {
 		return mLastErrorString;
 	}
 
-	void Script::loadFile( DataSourceRef source ){
-        loadString( ci::loadString( source ) );
+	void Script::loadFromFile( DataSourceRef source ){
+        loadFromMemory( ci::loadString( source ) );
     }
 	
-	void Script::loadString( const std::string& script ){
+	void Script::loadFromMemory( const std::string &script ){
         gc();
         
         mLastErrorString = "";
