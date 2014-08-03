@@ -28,19 +28,23 @@ void ScriptApp::setup()
 {
     setupScriptEngine();
     
-    // load the application settings
-    mSettings = as::Script::create( loadAsset( "Settings.script" ), "" );
     
-    // if the script got loaded and compiled correctly
-    if( mSettings ){
+    AssetManager::load( "Settings.script", [this]( DataSourceRef script ){
+    // load the application settings
+    mSettings = as::Script::create( script, "" );
         
-        // extract the settings to setup the app window
-        setWindowSize( mSettings->get<Vec2i>( "windowSize" ) );
-        setWindowPos( mSettings->get<Vec2i>( "windowPos" ) );
         
-        // check if we need to go fullscreen
-        setFullScreen( mSettings->get<bool>( "fullscreen" ) );
-    }
+        // if the script got loaded and compiled correctly
+        if( mSettings ){
+            
+            // extract the settings to setup the app window
+            setWindowSize( mSettings->get<Vec2i>( "windowSize" ) );
+            setWindowPos( mSettings->get<Vec2i>( "windowPos" ) );
+            
+            // check if we need to go fullscreen
+            setFullScreen( mSettings->get<bool>( "fullscreen" ) );
+        }
+    } );
 }
 
 void ScriptApp::setupScriptEngine()

@@ -12,6 +12,14 @@ class HelloAngelscriptApp : public AppNative {
 	void setup();
 };
 
+template<typename T>
+void toString( T num ){
+    return ...;
+}
+
+
+toString<int>( 5 );
+
 void HelloAngelscriptApp::setup()
 {
     // create a script that represents a function named "hello"
@@ -20,9 +28,11 @@ void HelloAngelscriptApp::setup()
     // a string. You also have to specify the full function signature and
     // not only its name.
     
-    console() << "Hello " << as::Script::create( "string who(){\
-                                                    return \"Angelscript\";\
-                                                }", "" )->call<string>( "string who()" ) << endl;
+    as::ScriptRef script = as::Script::create( "string who(){\
+                       return \"Angelscript\";\
+                       }", "" );
+    
+    console() << "Hello " << script->call<string>( "string who()" ) << endl;
     
     // clear out the window with black
 	getWindow()->getSignalDraw().connect( [this] { gl::clear(); } );

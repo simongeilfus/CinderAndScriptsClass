@@ -2,6 +2,9 @@
 #include "cinder/gl/gl.h"
 #include "cinder/Utilities.h"
 
+
+#include "Script.h"
+
 #include "AssetManager.h"
 
 using namespace ci;
@@ -12,13 +15,15 @@ class ScriptApp : public AppNative {
   public:
 	void setup();
 	void draw();
+    
+    as::ScriptRef mScript;
 };
 
 void ScriptApp::setup()
 {
-    // adds a secondary asset folder so we can share
-    // assets between apps.
-    addAssetDirectory( "../../../assets/" );
+    AssetManager::load( "main.script", [this]( DataSourceRef script ){
+        mScript = as::Script::create( script, "" );
+    } );
 }
 
 

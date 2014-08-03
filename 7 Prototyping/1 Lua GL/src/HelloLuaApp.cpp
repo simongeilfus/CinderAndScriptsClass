@@ -19,8 +19,6 @@ public:
 
 void ScriptApp::setup()
 {
-    
-    // load the application settings
     AssetManager::load( "draw.lua", [this]( DataSourceRef script ){
         
         try {

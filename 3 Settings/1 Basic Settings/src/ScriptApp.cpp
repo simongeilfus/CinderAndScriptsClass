@@ -24,7 +24,7 @@ class ScriptApp : public AppNative {
 
 void ScriptApp::setup()
 {
-    //setupScriptEngine();
+    setupScriptEngine();
     
     // load the application settings
     mSettings = as::Script::create( loadAsset( "Settings.script" ), "" );
