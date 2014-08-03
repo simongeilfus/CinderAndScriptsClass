@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<cinder>
+<block
+	name="LuaBind"
+	id="sg.cinder.luabind"
+	author="Simon Geilfus"
+	summary="LuaBind library for Cinder"
+	>
+	<supports os="macosx" />
+	<includePath system="true">include</includePath>
+	<header>include/LuaBindings.h</header>
+	<header>include/Script.h</header>
+	<source>src/Script.cpp</source>
+	<staticLibrary>libs/macosx/libLua.a</staticLibrary>
+	<staticLibrary>libs/macosx/libLuabind.a</staticLibrary>
+	<staticLibrary>libs/macosx/libLuaBindings.a</staticLibrary>
+</block>
+</cinder>
