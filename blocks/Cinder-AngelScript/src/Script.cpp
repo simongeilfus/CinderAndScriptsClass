@@ -169,6 +169,17 @@ namespace as {
         return mFunctions[name];
     }
     
+    //! returns the address of a global variable by its name
+    void* Script::getAddress( const std::string &name )
+    {
+        asIScriptModule *mod = getEngine()->GetModule( mModuleName.c_str() );
+        int index = mod->GetGlobalVarIndexByName( name.c_str() );
+        if( index >= 0 ){
+            return mod->GetAddressOfGlobalVar( index );
+        }
+        return nullptr;
+    }
+    
     
     //! calls a scripted function
     void Script::call( const std::string &function )

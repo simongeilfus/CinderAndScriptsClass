@@ -63,9 +63,16 @@ namespace as {
         //! returns a function by its name
         asIScriptFunction*      getFunction( const std::string &name );
         
+        //! returns the address of a global variable by its name
+        void* getAddress( const std::string &name );
+        
         //! returns a global variable by its name
         template<typename T>
         T get( const std::string &name );
+        
+        //! sets the value of a global variable by name
+        template<typename T>
+        void set( const std::string &name, const T &t );
         
         //! calls a scripted function
         void call( const std::string &function );
@@ -312,12 +319,23 @@ namespace as {
     T Script::get( const std::string &name )
     {
         asIScriptModule *mod = getEngine()->GetModule( mModuleName.c_str() );
-        int varIdx = mod->GetGlobalVarIndexByName( name.c_str() );
-        if( varIdx >= 0 ){
-            T* address = static_cast<T*>( mod->GetAddressOfGlobalVar( varIdx ) );
+        int index = mod->GetGlobalVarIndexByName( name.c_str() );
+        if( index >= 0 ){
+            T* address = static_cast<T*>( mod->GetAddressOfGlobalVar( index ) );
             return *address;
         }
         return T();
+    }
+    
+    //! sets the value of a global variable by name
+    template<typename T>
+    void Script::set( const std::string &name, const T &t )
+    {
+        asIScriptModule *mod = getEngine()->GetModule( mModuleName.c_str() );
+        int index = mod->GetGlobalVarIndexByName( name.c_str() );
+        if( index >= 0 ){
+            *static_cast<T*>( mod->GetAddressOfGlobalVar( index ) ) = t;
+        }
     }
     
     
