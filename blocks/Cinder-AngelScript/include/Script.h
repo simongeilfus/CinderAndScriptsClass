@@ -63,6 +63,10 @@ namespace as {
         //! returns a function by its name
         asIScriptFunction*      getFunction( const std::string &name );
         
+        //! sets the address of a global variable by its signature
+        template<typename T>
+        static void setAddress( const std::string &signature, T* address );
+        
         //! returns the address of a global variable by its name
         void* getAddress( const std::string &name );
         
@@ -313,6 +317,14 @@ namespace as {
         return T();
     }
     
+    //! sets the address of a global variable by its signature
+    template<typename T>
+    void Script::setAddress( const std::string &signature, T* address ){
+        int r;
+        
+        // Register a primitive property that can be read and written to from the script.
+        r = getEngine()->RegisterGlobalProperty( signature.c_str(), static_cast<void*>( address ) ); assert( r >= 0 );
+    }
     
     //! returns a global variable by name
     template<typename T>

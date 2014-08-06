@@ -1,0 +1,17 @@
+void update(){
+    
+    // get the difference between the two positions
+    Vec2f diff = ( sPosition - sMousePosition );
+    
+    // scale it down
+    diff *= 0.075f;
+    
+    // and add it to the position
+    sPosition += diff;
+}
+
+
+ColorA getColor(){
+    float offset = ( sin( sTime * 2.5 ) + 1.0 ) * 0.5;
+    return ColorA::white() * 0.3 + ColorA( offset, 0.0, 0.0, 0.0 ) * 0.7;
+}
